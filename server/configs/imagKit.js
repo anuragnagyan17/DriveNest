@@ -1,18 +1,26 @@
 import ImageKit from "imagekit";
 import fs from "fs";
 
-var imagekit = new ImageKit({
-  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
-});
-
-export const uploadToImageKit = async (filePath, fileName) => {
+// Lazy initialization - only create ImageKit instance if real keys are provided
+const getImageKit = () => {
   if (
     !process.env.IMAGEKIT_PUBLIC_KEY ||
     process.env.IMAGEKIT_PUBLIC_KEY === "dummy_public_key"
   ) {
-    console.log("Using fallback image due to dummy ImageKit keys.");
+    return null;
+  }
+  return new ImageKit({
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+  });
+};
+
+export const uploadToImageKit = async (filePath, fileName) => {
+  const imagekit = getImageKit();
+  
+  if (!imagekit) {
+    console.log("ImageKit not configured - using fallback image.");
     return "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800";
   }
 
@@ -25,4 +33,4 @@ export const uploadToImageKit = async (filePath, fileName) => {
   return result.url;
 };
 
-export default imagekit;
+export default getImageKit;
