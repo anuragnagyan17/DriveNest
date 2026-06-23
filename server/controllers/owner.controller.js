@@ -30,7 +30,9 @@ export const addCar = async (req, res) => {
     }
     
     const image = await uploadToImageKit(req.file.path, req.file.filename);
-    fs.unlinkSync(req.file.path);
+    if (!image.startsWith("http://localhost:3000/uploads/")) {
+      fs.unlinkSync(req.file.path);
+    }
     
     await Car.create({ ...car, owner: _id, image });
 
@@ -154,7 +156,9 @@ export const updateUserImage = async (req, res) => {
     }
     
     const image = await uploadToImageKit(req.file.path, req.file.filename);
-    fs.unlinkSync(req.file.path);
+    if (!image.startsWith("http://localhost:3000/uploads/")) {
+      fs.unlinkSync(req.file.path);
+    }
     
     await User.findByIdAndUpdate(_id, { image });
     return res.json({ success: true, message: "Image Updated" });
@@ -179,7 +183,9 @@ export const updateCar = async (req, res) => {
 
     if (req.file) {
       carData.image = await uploadToImageKit(req.file.path, req.file.filename);
-      fs.unlinkSync(req.file.path);
+      if (!carData.image.startsWith("http://localhost:3000/uploads/")) {
+        fs.unlinkSync(req.file.path);
+      }
     }
     
     const updatedCar = await Car.findByIdAndUpdate(carId, { ...carData }, { new: true });

@@ -14,6 +14,7 @@ import ManageBookings from "./pages/owner/ManageBookings";
 import Login from "./components/Login";
 import {Toaster} from 'react-hot-toast';
 import { useAppContext } from "./Context/AppContext";
+import AIRecommender from "./components/AIRecommender";
 
 const App = () => {
   const {showLogin} = useAppContext()
@@ -41,6 +42,7 @@ const App = () => {
       </Routes>
 
       {!isOwnerPath && <Footer />}
+      <AIRecommender />
     </>
   );
 };

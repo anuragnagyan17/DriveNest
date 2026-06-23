@@ -90,7 +90,7 @@ const Dashboard = () => {
               <p className="text-lg font-semibold">{card.value}</p>
             </div>
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-              <img src={card.icon} alt="" className="h-4 w-4" />
+              {card.icon ? <img src={card.icon} alt="" className="h-4 w-4" /> : null}
             </div>
           </div>
         ))}
@@ -105,11 +105,13 @@ const Dashboard = () => {
             <div key={index} className="mt-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <img
-                    src={assets.listIconColored}
-                    alt=""
-                    className="h-5 w-5"
-                  />
+                  {assets.listIconColored ? (
+                    <img
+                      src={assets.listIconColored}
+                      alt=""
+                      className="h-5 w-5"
+                    />
+                  ) : null}
                 </div>
                 <div>
                   <p className="">

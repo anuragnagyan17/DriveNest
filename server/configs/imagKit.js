@@ -20,8 +20,8 @@ export const uploadToImageKit = async (filePath, fileName) => {
   const imagekit = getImageKit();
   
   if (!imagekit) {
-    console.log("ImageKit not configured - using fallback image.");
-    return "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800";
+    console.log("ImageKit not configured - serving local image from uploads/");
+    return `http://localhost:3000/uploads/${fileName}`;
   }
 
   const file = fs.readFileSync(filePath);

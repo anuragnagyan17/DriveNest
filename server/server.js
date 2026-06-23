@@ -7,6 +7,7 @@ import ownerRouter from "./routes/owner.route.js";
 import bookingRouter from "./routes/booking.routes.js";
 import newsletterRouter from "./routes/newsletter.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
+import aiRouter from "./routes/ai.routes.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -44,6 +45,7 @@ app.use("/api/owner", ownerRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/newsletter", newsletterRouter);
 app.use("/api/notifications", notificationRouter);
+app.use("/api/ai", aiRouter);
 
 app.listen(port, () => {
   console.log(`server is running on port http://localhost:${port}`);
