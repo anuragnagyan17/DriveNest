@@ -1,8 +1,12 @@
+// Required env var: GOOGLE_CLIENT_ID in server/.env
 import User from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import { response } from "express";
 import jwt from "jsonwebtoken";
 import Car from "../models/car.model.js";
+import { OAuth2Client } from "google-auth-library";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (userId) => {
   const payload = userId;
@@ -156,6 +160,69 @@ export const getRecentCars = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        message: "Google credential is required",
+      });
+    }
+
+    // Verify the Google token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Could not retrieve email from Google account",
+      });
+    }
+
+    // Find existing user by email OR create new one
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // Existing user — update googleId if not set yet
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      // New user — create account without password
+      user = await User.create({
+        name,
+        email,
+        googleId,
+        image: picture || "",
+      });
+    }
+
+    const token = generateToken(user._id.toString());
+
+    return res.status(200).json({
+      success: true,
+      message: "Google login successful",
+      token,
+    });
+
+  } catch (error) {
+    console.error("Google auth error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Google authentication failed. Please try again.",
     });
   }
 };

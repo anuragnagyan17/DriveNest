@@ -4,6 +4,7 @@ import { assets } from "../../assets/assets";
 import { useAppContext } from "../../Context/AppContext";
 import toast from "react-hot-toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import LocationPicker from "../../components/LocationPicker";
 
 const AddCar = () => {
   const { axios, fetchCars, fetchRecentCars } = useAppContext();
@@ -17,6 +18,7 @@ const AddCar = () => {
     transmission: "",
     fuel_type: "",
     seating_capacity: 0,
+    country: "",
     location: "",
     description: "",
     features: [],
@@ -42,6 +44,7 @@ const AddCar = () => {
           transmission: existingCar.transmission || "",
           fuel_type: existingCar.fuel_type || "",
           seating_capacity: existingCar.seating_capacity || 0,
+          country: existingCar.country || "",
           location: existingCar.location || "",
           description: existingCar.description || "",
           features: existingCar.features || [],
@@ -81,6 +84,7 @@ const AddCar = () => {
           transmission: "",
           fuel_type: "",
           seating_capacity: 0,
+          country: "",
           location: "",
           description: "",
           features: [],
@@ -237,20 +241,12 @@ const AddCar = () => {
           </div>
         </div>
         {/* Car location */}
-        <div className="flex flex-col w-full">
-          <label>Location</label>
-          <select
-            onChange={(e) => setCar({ ...car, location: e.target.value })}
-            value={car.location}
-            className="px-3 py-2 border border-borderColor rounded-md outline-none"
-          >
-            <option value="">Select a Location</option>
-            <option value="New York">New York</option>
-            <option value="Los Angeles">Los Angeles</option>
-            <option value="Houston">Hoston</option>
-            <option value="Chicago">Chicago</option>
-          </select>
-        </div>
+        <LocationPicker
+          country={car.country}
+          city={car.location}
+          onCountryChange={(val) => setCar({ ...car, country: val, location: "" })}
+          onCityChange={(val) => setCar({ ...car, location: val })}
+        />
 
         {/* Car description */}
         <div className="flex flex-col w-full">

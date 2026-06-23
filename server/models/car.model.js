@@ -14,6 +14,7 @@ const carSchema = new mongoose.Schema(
     transmission: { type: String, required: true },
     pricePerDay: { type: Number, required: true },
     location: { type: String, required: true },
+    country: { type: String, required: true },
     description: { type: String, required: true },
     features: { type: [String], default: [] },
     isAvaliable: { type: Boolean, default: true },

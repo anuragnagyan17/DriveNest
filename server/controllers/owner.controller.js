@@ -25,6 +25,9 @@ export const addCar = async (req, res) => {
     const { _id } = req.user;
     let car = JSON.parse(req.body.carData);
 
+    if (!car.country) return res.json({ success: false, message: "Please select a country" });
+    if (!car.location) return res.json({ success: false, message: "Please select a city" });
+
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Image is required" });
     }
@@ -176,6 +179,9 @@ export const updateCar = async (req, res) => {
     const { carId } = req.body;
     let carData = JSON.parse(req.body.carData);
     
+    if (!carData.country) return res.json({ success: false, message: "Please select a country" });
+    if (!carData.location) return res.json({ success: false, message: "Please select a city" });
+
     const car = await Car.findById(carId);
     if (!car || car.owner.toString() !== _id.toString()) {
       return res.status(404).json({ success: false, message: "Unauthorized" });

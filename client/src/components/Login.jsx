@@ -1,6 +1,7 @@
 import React from "react";
 import { useAppContext } from "../Context/AppContext";
 import {toast} from "react-hot-toast";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const { setShowLogin, axios, setToken, navigate } = useAppContext();
@@ -9,6 +10,29 @@ const Login = () => {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const { data } = await axios.post("/api/user/google-auth", {
+        credential: credentialResponse.credential,
+      });
+      if (data.success) {
+        setToken(data.token);
+        localStorage.setItem("token", data.token);
+        setShowLogin(false);
+        navigate("/");
+        toast.success("Logged in with Google!");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("Google login failed. Please try again.");
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error("Google login failed. Please try again.");
+  };
 
   const onSubmitHandler = async (e) => {
     try {
@@ -44,6 +68,27 @@ const Login = () => {
           <span className="text-primary-500">User</span>{" "}
           {state === "login" ? "Login" : "Sign Up"}
         </p>
+
+        {/* Google Login Button */}
+        <div className="w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap={false}
+            theme="outline"
+            shape="rectangular"
+            text="continue_with"
+            width="100%"
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-2 w-full">
+          <div className="flex-1 h-px bg-slate-600" />
+          <span className="text-slate-500 text-xs">or</span>
+          <div className="flex-1 h-px bg-slate-600" />
+        </div>
+
         {state === "register" && (
           <div className="w-full">
             <p>Name</p>
