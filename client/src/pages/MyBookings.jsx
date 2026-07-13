@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import { assets } from "../assets/assets";
 import Title from "../components/Title";
 import { useAppContext } from "../Context/AppContext";
+import { useSocket } from "../Context/SocketContext";
 import toast from "react-hot-toast";
 
 const MyBookings = () => {
   const { axios } = useAppContext();
+  const { socket } = useSocket();
   const [bookings, setBookings] = useState([]);
 
   const fetchMyBookings = async () => {
@@ -37,6 +39,21 @@ const MyBookings = () => {
   useEffect(() => {
     fetchMyBookings();
   }, []);
+
+  useEffect(() => {
+    if (socket) {
+      const handleStatusChanged = (data) => {
+        toast.success(data.message);
+        fetchMyBookings();
+      };
+
+      socket.on("booking:statusChanged", handleStatusChanged);
+      return () => {
+        socket.off("booking:statusChanged", handleStatusChanged);
+      };
+    }
+  }, [socket]);
+
   return (
     <div className="px-6 md:px-16 lg:px-24 xl:px-32 2xl:px-48 mt-16 text-sm max-w-7xl">
       <Title

@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import { assets, dummyDashboardData } from "../../assets/assets";
 import Title from "../../components/owner/Title";
 import { useAppContext } from "../../Context/AppContext";
+import { useSocket } from "../../Context/SocketContext";
 import toast from "react-hot-toast";
 
 const Dashboard = () => {
   const { axios, isOwner, currency } = useAppContext();
+  const { socket } = useSocket();
 
   const [data, setData] = useState({
     totalCars: 0,
@@ -70,6 +72,20 @@ const Dashboard = () => {
       fetchDashboardData();
     }
   }, [isOwner]);
+
+  useEffect(() => {
+    if (socket) {
+      const handleNewBooking = (data) => {
+        toast.success(data.message);
+        fetchDashboardData();
+      };
+      
+      socket.on("booking:new", handleNewBooking);
+      return () => {
+        socket.off("booking:new", handleNewBooking);
+      };
+    }
+  }, [socket]);
 
   return (
     <div className="px-4 pt-10 md:px-10 flex-1">

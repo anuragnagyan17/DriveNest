@@ -8,8 +8,10 @@ import bookingRouter from "./routes/booking.routes.js";
 import newsletterRouter from "./routes/newsletter.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
 import aiRouter from "./routes/ai.routes.js";
-
-const app = express();
+import http from "http";
+import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+import User from "./models/user.model.js";const app = express();
 const port = process.env.PORT || 3000;
 
 await connectDB();
@@ -23,7 +25,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL
 ].filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin) || (origin && origin.startsWith("http://localhost:"))) {
       callback(null, true);
@@ -32,7 +34,47 @@ app.use(cors({
     }
   },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+
+const server = http.createServer(app);
+const io = new Server(server, { cors: corsOptions });
+
+// Socket Authentication Middleware
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error("Authentication error: No token provided"));
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded || !decoded.id) {
+      return next(new Error("Authentication error: Invalid token"));
+    }
+    const user = await User.findById(decoded.id).select("role");
+    if (!user) {
+       return next(new Error("Authentication error: User not found"));
+    }
+    socket.userId = decoded.id;
+    socket.role = user.role;
+    next();
+  } catch (error) {
+    next(new Error("Authentication error: " + error.message));
+  }
+});
+
+io.on("connection", (socket) => {
+  socket.join(`user:${socket.userId}`);
+  if (socket.role === "owner") {
+    socket.join(`owner:${socket.userId}`);
+  }
+});
+
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 app.use("/uploads", express.static("uploads"));
 
@@ -47,6 +89,6 @@ app.use("/api/newsletter", newsletterRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/ai", aiRouter);
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`server is running on port http://localhost:${port}`);
 });

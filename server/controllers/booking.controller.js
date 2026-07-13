@@ -65,6 +65,10 @@ export const createBooking = async (req, res) => {
       link: "/owner/manage-bookings"
     });
 
+    req.io.to(`owner:${carData.owner.toString()}`).emit('booking:new', { 
+      message: `New booking request for ${carData.brand} ${carData.model}` 
+    });
+
     return res.json({ success: true, message: "Booking Created" });
   } catch (error) {
     console.log(error.message);
@@ -138,6 +142,10 @@ export const changeBookingStatus = async (req, res) => {
       message,
       type: `booking_${status}`,
       link: booking.owner.toString() === _id.toString() ? "/my-bookings" : "/owner/manage-bookings"
+    });
+
+    req.io.to(`user:${recipient.toString()}`).emit('booking:statusChanged', { 
+      message 
     });
 
     return res.json({ success: true, message: "Status Updated" });
