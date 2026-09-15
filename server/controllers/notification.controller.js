@@ -6,6 +6,7 @@ export const getNotifications = async (req, res) => {
     const notifications = await Notification.find({ user: _id }).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, notifications });
   } catch (error) {
+    console.error("NOTIFICATIONS ERROR:", error.message, error.stack);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -16,6 +17,7 @@ export const markAsRead = async (req, res) => {
     await Notification.updateMany({ user: _id, isRead: false }, { isRead: true });
     return res.status(200).json({ success: true, message: "Notifications marked as read" });
   } catch (error) {
+    console.error("NOTIFICATIONS ERROR:", error.message, error.stack);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
