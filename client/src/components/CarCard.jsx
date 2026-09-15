@@ -1,10 +1,30 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../Context/AppContext";
 
 const CarCard = ({ car }) => {
   const currency = import.meta.env.VITE_CURRENCY;
   const navigate = useNavigate();
+  const { axios } = useAppContext();
+  const [avgRating, setAvgRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const { data } = await axios.get(`/api/reviews/${car._id}`);
+        if (data.success) {
+          setAvgRating(data.avgRating);
+          setTotalReviews(data.totalReviews);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchReviews();
+  }, [car._id, axios]);
+
   return (
     <div
       onClick={() => {
@@ -50,7 +70,11 @@ const CarCard = ({ car }) => {
               {car.brand}
               {car.model}
             </h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm mt-1">
+              <span className="text-yellow-400">★</span> {avgRating > 0 ? avgRating : "New"} 
+              {totalReviews > 0 ? ` (${totalReviews})` : ""}
+            </p>
+            <p className="text-muted-foreground text-sm mt-1">
               {car.category} • {car.year}
             </p>
           </div>

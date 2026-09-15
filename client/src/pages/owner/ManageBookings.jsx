@@ -3,10 +3,14 @@ import { dummyMyBookingsData } from "../../assets/assets";
 import Title from "../../components/Title";
 import { useAppContext } from "../../Context/AppContext";
 import toast from "react-hot-toast";
+import ChatWindow from "../../components/ChatWindow";
 
 const ManageBookings = () => {
   const { axios } = useAppContext();
   const [bookings, setBookings] = useState([]);
+  const [chatBookingId, setChatBookingId] = useState(null);
+  const [chatUserName, setChatUserName] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
 
   const fetchOwnerBookings = async () => {
     try {
@@ -72,6 +76,9 @@ const ManageBookings = () => {
                   <p className="font-medium max-md:hidden">
                     {booking.car.brand} {booking.car.model}
                   </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {booking.user?.name || "Client"}
+                  </p>
                 </td>
                 <td className="p-3 max-md:hidden">
                   {booking.pickupDate.split("T")[0]} to{" "}
@@ -87,36 +94,54 @@ const ManageBookings = () => {
                   </span>
                 </td>
                 <td className="p-3">
-                  {booking.status === "pending" || booking.status === "confirmed" ? (
-                    <select
-                      onChange={(e) =>
-                        changeBookingStatus(booking._id, e.target.value)
-                      }
-                      value={booking.status}
-                      className="px-2 py-1.5 mt-1 text-slate-400 border border-borderColor rounded-md outline-none"
+                  <div className="flex flex-col items-stretch gap-2">
+                    {booking.status === "pending" || booking.status === "confirmed" ? (
+                      <select
+                        onChange={(e) =>
+                          changeBookingStatus(booking._id, e.target.value)
+                        }
+                        value={booking.status}
+                        className="px-2 py-1.5 mt-1 text-slate-400 border border-borderColor rounded-md outline-none"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="returned">Returned</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          booking.status === "returned"
+                            ? "bg-blue-100 text-blue-500"
+                            : "bg-red-100 text-red-500"
+                        }`}
+                      >
+                        {booking.status}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => {
+                        setChatBookingId(booking._id);
+                        setChatUserName(booking.user?.name || "Client");
+                        setChatOpen(true);
+                      }}
+                      className="px-4 py-2 bg-blue-600/15 text-blue-400 rounded-lg hover:bg-blue-600/25 transition-colors ml-2"
                     >
-                      <option value="pending">Pending</option>
-                      <option value="cancelled">Cancelled</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="returned">Returned</option>
-                    </select>
-                  ) : (
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        booking.status === "returned"
-                          ? "bg-blue-100 text-blue-500"
-                          : "bg-red-100 text-red-500"
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
-                  )}
+                      💬 Chat with Client
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <ChatWindow
+        bookingId={chatBookingId}
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        otherPartyName={chatUserName}
+      />
     </div>
   );
 };

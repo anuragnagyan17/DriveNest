@@ -7,11 +7,19 @@ import toast from "react-hot-toast";
 
 const CarDetails = () => {
   const { id } = useParams();
-  const { cars, axios, pickupDate, setPickupDate, returnDate, setReturnDate } =
+  const { cars, axios, pickupDate, setPickupDate, returnDate, setReturnDate, token } =
     useAppContext();
 
   const navigate = useNavigate();
   const [car, setCar] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewBookingId, setReviewBookingId] = useState(null);
+  const [newRating, setNewRating] = useState(0);
+  const [newComment, setNewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
   const currency = import.meta.env.VITE_CURRENCY;
 
   const handleSubmit = async (e) => {
@@ -34,9 +42,68 @@ const CarDetails = () => {
     }
   };
 
+  const fetchReviews = async () => {
+    try {
+      const { data } = await axios.get(`/api/reviews/${id}`);
+      if (data.success) {
+        setReviews(data.reviews);
+        setAvgRating(data.avgRating);
+        setTotalReviews(data.totalReviews);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchCanReview = async () => {
+    try {
+      const { data } = await axios.get(`/api/reviews/can-review/${id}`, {
+        headers: { Authorization: token },
+      });
+      if (data.success) {
+        setCanReview(data.canReview);
+        setReviewBookingId(data.bookingId);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    setSubmittingReview(true);
+    try {
+      const { data } = await axios.post(
+        "/api/reviews",
+        {
+          carId: id,
+          bookingId: reviewBookingId,
+          rating: newRating,
+          comment: newComment,
+        },
+        { headers: { Authorization: token } }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        setNewRating(0);
+        setNewComment("");
+        setCanReview(false);
+        fetchReviews();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   useEffect(() => {
     setCar(cars.find((car) => car._id === id));
-  }, [cars, id]);
+    fetchReviews();
+    if (token) fetchCanReview();
+  }, [cars, id, token]);
   return car ? (
     <div className="px-6 md:px-16 lg:px-24 xl:px-32 mt-16">
       <button
@@ -109,6 +176,95 @@ const CarDetails = () => {
                 <p className="text-slate-400">No features listed</p>
               )}
             </div>
+
+            <hr className="border-borderColor my-6" />
+
+            <div className="flex items-center gap-4">
+              <h1 className="text-4xl font-bold text-white">{avgRating}</h1>
+              <div>
+                <div className="flex text-lg">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      className={star <= Math.round(avgRating) ? "text-yellow-400" : "text-slate-600"}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <p className="text-slate-400 text-sm">{totalReviews} reviews</p>
+              </div>
+            </div>
+
+            {canReview && (
+              <form onSubmit={handleSubmitReview} className="bg-slate-900 p-6 rounded-xl space-y-4">
+                <h2 className="text-xl font-medium text-white">Share your experience</h2>
+                <div className="flex text-2xl cursor-pointer">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      onClick={() => setNewRating(star)}
+                      className={star <= newRating ? "text-yellow-400" : "text-slate-600"}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Tell others about your experience..."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-primary resize-none h-24"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="bg-primary hover:bg-primary-dull text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  {submittingReview ? "Submitting..." : "Submit Review"}
+                </button>
+              </form>
+            )}
+
+            <div className="space-y-6">
+              {reviews.map((review, index) => (
+                <div key={review._id}>
+                  <div className="flex items-start gap-4">
+                    {review.user?.image ? (
+                      <img src={review.user.image} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-medium">
+                        {review.user?.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-white">{review.user?.name}</p>
+                          <div className="flex text-sm mt-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                className={star <= review.rating ? "text-yellow-400" : "text-slate-600"}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-sm text-slate-500">
+                          {new Date(review.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-slate-300 text-sm leading-relaxed">{review.comment}</p>
+                    </div>
+                  </div>
+                  {index < reviews.length - 1 && <hr className="border-borderColor mt-6" />}
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
         <form

@@ -4,11 +4,15 @@ import Title from "../components/Title";
 import { useAppContext } from "../Context/AppContext";
 import { useSocket } from "../Context/SocketContext";
 import toast from "react-hot-toast";
+import ChatWindow from "../components/ChatWindow";
 
 const MyBookings = () => {
   const { axios } = useAppContext();
   const { socket } = useSocket();
   const [bookings, setBookings] = useState([]);
+  const [chatBookingId, setChatBookingId] = useState(null);
+  const [chatOwnerName, setChatOwnerName] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
 
   const fetchMyBookings = async () => {
     try {
@@ -145,10 +149,28 @@ const MyBookings = () => {
                   Cancel Booking
                 </button>
               )}
+              {(booking.status === "pending" || booking.status === "confirmed") && (
+                <button
+                  onClick={() => {
+                    setChatBookingId(booking._id);
+                    setChatOwnerName(booking.car?.owner?.name || "Owner");
+                    setChatOpen(true);
+                  }}
+                  className="px-4 py-2 bg-blue-600/15 text-blue-400 rounded-lg hover:bg-blue-600/25 transition-colors self-end w-full sm:w-auto mt-2"
+                >
+                  💬 Chat with Owner
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
+      <ChatWindow
+        bookingId={chatBookingId}
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        otherPartyName={chatOwnerName}
+      />
     </div>
   );
 };

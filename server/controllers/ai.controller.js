@@ -1,5 +1,7 @@
 import getGeminiModel from "../configs/gemini.js";
 import Car from "../models/car.model.js";
+import { redisGet, redisSet } from "../configs/redis.js";
+import crypto from "crypto";
 
 export const extractFilters = async (userQuery) => {
   try {
@@ -138,6 +140,17 @@ export const recommendCars = async (req, res) => {
       return res.status(400).json({ success: false, message: "Query is required" });
     }
 
+    const queryHash = crypto
+      .createHash("md5")
+      .update(userQuery.toLowerCase().trim())
+      .digest("hex");
+    const cacheKey = `ai:recommend:${queryHash}`;
+
+    const cached = await redisGet(cacheKey);
+    if (cached) {
+      return res.json({ ...JSON.parse(cached), cached: true });
+    }
+
     const filters = await extractFilters(userQuery);
     let mongoQuery = buildMongoQuery(filters);
     
@@ -159,12 +172,11 @@ export const recommendCars = async (req, res) => {
       };
     }).filter(rec => rec.car); // filter out any mis-matched IDs just in case
 
-    return res.status(200).json({
-      success: true,
-      message: aiResponse.message,
-      filters,
-      recommendations
-    });
+    const responseData = { 
+      success: true, message: aiResponse.message, filters, recommendations 
+    };
+    await redisSet(cacheKey, JSON.stringify(responseData), 3600);
+    return res.json({ ...responseData, cached: false });
 
   } catch (error) {
     console.error("Error in recommendCars:", error);
