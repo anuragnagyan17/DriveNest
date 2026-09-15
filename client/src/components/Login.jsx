@@ -62,7 +62,7 @@ const Login = () => {
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={onSubmitHandler}
-        className="flex flex-col gap-4 m-auto items-start p-8 py-12 w-80 sm:w-[352px] text-slate-400 rounded-lg shadow-xl border border-slate-700 bg-slate-800"
+        className="flex flex-col gap-4 m-auto items-start p-6 sm:p-8 py-12 w-80 sm:w-[352px] text-slate-400 rounded-lg shadow-xl border border-slate-700 bg-slate-800"
       >
         <p className="text-2xl font-medium m-auto">
           <span className="text-primary-500">User</span>{" "}
@@ -78,7 +78,7 @@ const Login = () => {
             theme="outline"
             shape="rectangular"
             text="continue_with"
-            width="300"
+            width="250"
           />
         </div>
 
