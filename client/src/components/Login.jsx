@@ -78,7 +78,7 @@ const Login = () => {
             theme="outline"
             shape="rectangular"
             text="continue_with"
-            width="100%"
+            width="300"
           />
         </div>
 
