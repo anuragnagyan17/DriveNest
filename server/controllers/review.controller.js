@@ -93,3 +93,59 @@ export const checkCanReview = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const deleteReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user._id;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ success: false, message: "Review not found" });
+    }
+
+    if (review.user.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "You can only delete your own review" });
+    }
+
+    await Review.findByIdAndDelete(reviewId);
+    return res.status(200).json({ success: true, message: "Review deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user._id;
+    const { rating, comment } = req.body;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ success: false, message: "Review not found" });
+    }
+
+    if (review.user.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "You can only update your own review" });
+    }
+
+    if (rating && (rating < 1 || rating > 5)) {
+      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+    }
+
+    if (comment && comment.length > 500) {
+      return res.status(400).json({ success: false, message: "Comment cannot exceed 500 characters" });
+    }
+
+    if (rating) review.rating = rating;
+    if (comment) review.comment = comment;
+
+    await review.save();
+    await review.populate("user", "name image");
+
+    return res.status(200).json({ success: true, message: "Review updated", review });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

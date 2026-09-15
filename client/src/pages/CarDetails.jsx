@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 
 const CarDetails = () => {
   const { id } = useParams();
-  const { cars, axios, pickupDate, setPickupDate, returnDate, setReturnDate, token } =
+  const { cars, axios, pickupDate, setPickupDate, returnDate, setReturnDate, token, user } =
     useAppContext();
 
   const navigate = useNavigate();
@@ -20,6 +20,12 @@ const CarDetails = () => {
   const [newRating, setNewRating] = useState(0);
   const [newComment, setNewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState("");
+  const [updatingReview, setUpdatingReview] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   const currency = import.meta.env.VITE_CURRENCY;
 
   const handleSubmit = async (e) => {
@@ -99,13 +105,73 @@ const CarDetails = () => {
     }
   };
 
+  const openDeleteModal = (reviewId) => {
+    setDeleteTargetId(reviewId);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    try {
+      const { data } = await axios.delete(`/api/reviews/${deleteTargetId}`, {
+        headers: { Authorization: token },
+      });
+      if (data.success) {
+        toast.success("Review deleted");
+        fetchReviews();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("Could not delete review");
+    } finally {
+      setDeleteModalOpen(false);
+      setDeleteTargetId(null);
+    }
+  };
+
+  const handleStartEdit = (review) => {
+    setEditingReviewId(review._id);
+    setEditRating(review.rating);
+    setEditComment(review.comment);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingReviewId(null);
+    setEditRating(5);
+    setEditComment("");
+  };
+
+  const handleUpdateReview = async (reviewId) => {
+    setUpdatingReview(true);
+    try {
+      const { data } = await axios.put(
+        `/api/reviews/${reviewId}`,
+        { rating: editRating, comment: editComment },
+        { headers: { Authorization: token } }
+      );
+      if (data.success) {
+        toast.success("Review updated");
+        handleCancelEdit();
+        fetchReviews();
+      } else {
+        toast.error("Could not update review");
+      }
+    } catch (error) {
+      toast.error("Could not update review");
+    } finally {
+      setUpdatingReview(false);
+    }
+  };
+
   useEffect(() => {
     setCar(cars.find((car) => car._id === id));
     fetchReviews();
     if (token) fetchCanReview();
   }, [cars, id, token]);
   return car ? (
-    <div className="px-6 md:px-16 lg:px-24 xl:px-32 mt-16">
+    <>
+      <div className="px-6 md:px-16 lg:px-24 xl:px-32 mt-16">
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 mb-6 text-slate-400 cursor-pointer"
@@ -257,7 +323,66 @@ const CarDetails = () => {
                           {new Date(review.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}
                         </span>
                       </div>
-                      <p className="mt-3 text-slate-300 text-sm leading-relaxed">{review.comment}</p>
+                      
+                      {editingReviewId === review._id ? (
+                        <div className="flex flex-col gap-3 mt-2">
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                onClick={() => setEditRating(star)}
+                                className={`cursor-pointer text-xl ${
+                                  star <= editRating ? "text-yellow-400" : "text-slate-600"
+                                }`}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <textarea
+                            value={editComment}
+                            onChange={(e) => setEditComment(e.target.value)}
+                            maxLength={500}
+                            rows={3}
+                            className="w-full bg-slate-800 border border-borderColor rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 resize-none"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleUpdateReview(review._id)}
+                              disabled={updatingReview}
+                              className="text-xs px-4 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 transition-colors font-medium"
+                            >
+                              {updatingReview ? "Saving..." : "Save Changes"}
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="text-xs px-4 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="mt-3 text-slate-300 text-sm leading-relaxed">{review.comment}</p>
+                          {(user?._id === review.user?._id || user?._id?.toString() === review.user?._id?.toString()) && (
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => openDeleteModal(review._id)}
+                                className="text-xs px-3 py-1 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
+                              >
+                                Delete
+                              </button>
+                              <button
+                                onClick={() => handleStartEdit(review)}
+                                className="text-xs px-3 py-1 rounded-lg bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 transition-colors"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                   {index < reviews.length - 1 && <hr className="border-borderColor mt-6" />}
@@ -330,6 +455,54 @@ const CarDetails = () => {
         </form>
       </div>
     </div>
+    
+    {deleteModalOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={() => setDeleteModalOpen(false)}
+        />
+        
+        {/* Modal box */}
+        <div className="relative z-10 w-full max-w-sm bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
+          
+          {/* Icon */}
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-500/15 mx-auto">
+            <span className="text-2xl">🗑️</span>
+          </div>
+
+          {/* Text */}
+          <div className="text-center">
+            <h3 className="text-white font-semibold text-lg mb-1">
+              Delete Review
+            </h3>
+            <p className="text-slate-400 text-sm">
+              Are you sure you want to delete this review? 
+              This action cannot be undone.
+            </p>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setDeleteModalOpen(false)}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-colors border border-slate-700"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   ) : (
     <Loader />
   );

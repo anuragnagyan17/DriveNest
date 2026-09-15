@@ -122,7 +122,11 @@ const ManageBookings = () => {
                     <button
                       onClick={() => {
                         setChatBookingId(booking._id);
-                        setChatUserName(booking.user?.name || "Client");
+                        setChatUserName(
+                          booking.user?.name ||
+                          booking.user?.email?.split("@")[0] ||
+                          "Client"
+                        );
                         setChatOpen(true);
                       }}
                       className="px-4 py-2 bg-blue-600/15 text-blue-400 rounded-lg hover:bg-blue-600/25 transition-colors ml-2"

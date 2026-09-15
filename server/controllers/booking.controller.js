@@ -80,7 +80,10 @@ export const getUserBookings = async (req, res) => {
   try {
     const { _id } = req.user;
     const bookings = await Booking.find({ user: _id })
-      .populate("car")
+      .populate({ 
+        path: "car", 
+        populate: { path: "owner", select: "name email image" } 
+      })
       .sort({ createdAt: -1 });
     return res.json({ success: true, bookings });
   } catch (error) {

@@ -153,7 +153,11 @@ const MyBookings = () => {
                 <button
                   onClick={() => {
                     setChatBookingId(booking._id);
-                    setChatOwnerName(booking.car?.owner?.name || "Owner");
+                    setChatOwnerName(
+                      booking.car?.owner?.name || 
+                      booking.car?.owner?.email?.split("@")[0] || 
+                      "Owner"
+                    );
                     setChatOpen(true);
                   }}
                   className="px-4 py-2 bg-blue-600/15 text-blue-400 rounded-lg hover:bg-blue-600/25 transition-colors self-end w-full sm:w-auto mt-2"
