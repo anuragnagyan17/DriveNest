@@ -4,7 +4,7 @@ import { getNotifications, markAsRead } from "../controllers/notification.contro
 
 const notificationRouter = express.Router();
 
-notificationRouter.get("/", protect, getNotifications);
+notificationRouter.get("/", getNotifications);
 notificationRouter.post("/mark-read", protect, markAsRead);
 
 export default notificationRouter;
